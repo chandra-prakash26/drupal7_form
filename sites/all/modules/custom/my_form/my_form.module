@@ -1,0 +1,48 @@
+<?php
+function my_form_block_info() {
+    $blocks = array();
+    $blocks['my_form'] = array(
+         'info' => t('my Form'),
+    );
+   return $blocks;
+}
+
+function my_form_block_view($delta='') {
+    $block = array();
+    switch($delta) {
+      case 'my_form' :
+        $content = drupal_get_form("my_custom_form");
+        $block['content'] = array(
+            "form"=>$content);
+        break;
+    }
+     return $block;
+}
+
+function my_custom_form($form, &$form_state){
+ $form['box-container'] = array(
+   '#prefix' => '<div id="box">',
+ );
+ $form['name'] = array(
+     '#suffix' => '</div>',
+     '#type'         => 'textfield',
+     '#required'     => true,
+     '#attributes' => array('id' => 'name', 'placeholder'=> 'Name'),
+ );
+ 
+ $form['submit'] = array(
+     '#type'         => 'submit',
+     '#value'        => t("Submit"),
+     '#ajax' => array(
+       'callback' => 'ajax_submit_callback',
+       'wrapper' => 'box',
+     ), 
+ );
+ return $form;
+}
+
+function ajax_submit_callback($form, $form_state) {
+    $element = $form['box-container'];
+    $element['#markup'] = '<h6>hello '.$form_state['values']['name'].'!</h6>';
+    return $element;
+}

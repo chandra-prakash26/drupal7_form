@@ -1,0 +1,3 @@
+core = "7.x"
+description = "An example module used to learn ajax functions."
+name = "Ajax Example Module"

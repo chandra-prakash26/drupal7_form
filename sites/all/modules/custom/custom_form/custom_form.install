@@ -1,0 +1,74 @@
+<?php
+/**
+ * Implements hook_schema().
+ */
+function custom_form_schema() {
+  $schema['custom_form'] = array(
+    'description' => 'Db for example form.',
+    'fields' => array(
+      'fe_id' => array(
+        'description' => 'The primary identifier for table.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'first_name' => array(
+        'description' => 'Stores first name of the user.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'last_name' => array(
+        'description' => 'Stores last name of the user.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'gender' => array(
+        'description' => 'Stores gender of the user.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'branch' => array(
+        'description' => 'Stores branch of the user.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'hobbies' => array(
+        'description' => 'Stores hobbies of the user.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'image_path' => array(
+        'description' => 'Stores the path of the image.',
+        'type' => 'varchar',
+        'length' => 100,
+      ),
+      'city' => array(
+        'description' => 'Stores city of the user.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+    ),
+    'primary key' => array(
+      'fe_id',
+    ),
+  );
+  return $schema;
+}
+?>
+
+
+
+
+

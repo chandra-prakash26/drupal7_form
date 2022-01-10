@@ -1,0 +1,170 @@
+<?php
+function custom_form_menu() {
+  $items = array();
+
+  $items['examples/custom_form-example'] = array( //this creates a URL at "examples/form-example"
+    'title' => 'Example Form', //page title
+    'description' => 'A form to mess around with.',
+    'page callback' => 'drupal_get_form', //this is the function that will be called when the page is accessed.  for a form, use drupal_get_form
+    'page arguments' => array('custom_form_form'), //put the name of the form here
+    'access callback' => TRUE
+  );
+
+//---------------------------------------------------------------------------------------
+  $items['examples/form-submissions'] = array( //this creates a URL at "examples/form-example"
+    'title' => 'Record', //page title
+    'type'=>MENU_NORMAL_ITEM,
+    'access arguments'=>array("access form_example submissions"),
+    'page callback'=>"form_example_submissions"
+  );
+//----------------------------------------------------------------------------------------------
+
+ $items['cities/autocomplete'] = array(
+    'title' => 'Autocomplete for cities',
+    'page callback' => '_cities_autocomplete',
+    'access arguments' => array('use autocomplete'),  //or whatever permission makes sense
+    'type' => MENU_CALLBACK
+  );
+
+//----------------------------------------------------------------------------------------------------------
+  return $items;
+}
+
+function custom_form_form($form, &$form_state) {
+ 
+ $form['first_name'] = array(
+    '#type' => 'textfield',
+    '#title' => 'First Name',
+    '#size' => 60,
+    '#maxlength' => 255,
+    '#required' => TRUE, //make this field required
+  );
+
+  $form['last_name'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Last Name',
+    '#size' => 60,
+    '#maxlength' => 255,
+    '#required' => TRUE,
+  );
+
+  $form['gender'] = array(
+    '#type' => 'radios',
+    '#title' => t('Gender'),
+    '#options' => array('Male' => 'Male', 'Female' => 'Female', 'Intersex' => 'Intersex'),
+    '#required' => TRUE,
+  );
+
+  $form['branch'] = array(
+    '#type' => 'radios',
+    '#title' => t('Branch'),
+    '#options' => array('ECE' => t('ECE'), 'CSE' => t('CSE'), 'IT' => t('IT'), 'Others' => t('Others')),
+    '#required' => TRUE,
+  );
+
+  $form['hobbies'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Hobbies'),
+    '#options' => array('Reading' => t('Reading'), 'Music' => t('Music'), 'Dance' => t('Dance'), 'Others' => t('Others')),
+    '#required' => TRUE,
+  );
+
+  $form['custom_content_block_image'] = array(
+    '#type' => 'managed_file',
+    '#name' => 'custom_content_block_image',
+    '#title' => t('Block image'),
+    '#size' => 40,
+    '#description' => t("Image should be less than 400 pixels wide and in JPG format."),
+    '#upload_location' => 'public://'
+  ); 
+
+  $form['city'] = array(
+    '#type' => 'textfield',
+    '#title' => 'City',
+    '#maxlength' => 128,
+    '#autocomplete_path' => 'cities/autocomplete',
+  );
+  $form['tags'] = array(
+    '#type' => 'taxonomy_term_reference',
+    '#title' => 'Tags',
+    '#description' => 'Enter a tag',
+    '#autocomplete_path' => 'taxonomy/autocomplete/field_tags',
+    '#maxlength' => 1024,
+  );
+  $form['submit_button'] = array(
+    '#type' => 'submit',
+    '#value' => t('Submit !'),
+  );
+ 
+  return $form;
+}
+
+function custom_form_form_validate($form, &$form_state) {
+
+}
+
+function custom_form_form_submit($form, &$form_state) {
+  if (isset($form_state['values']['custom_content_block_image'])) {
+    $file = file_load($form_state['values']['custom_content_block_image']);
+    $file->status = FILE_STATUS_PERMANENT;
+    $file_saved =file_save($file);
+    // Record that the module is using the file. 
+    file_usage_add($file_saved, 'mymodule_custom_content_block_form', 'custom_content_block_image', $file_saved->fid); 
+    $uri=$file_saved->uri;
+  }
+  $first_name = $form_state['values']['first_name'];
+  $last_name = $form_state['values']['last_name'];
+  $gender = $form_state['values']['gender'];
+  $branch = $form_state['values']['branch'];
+  $hobbies = $form_state['values']['hobbies'];
+  $city = $form_state['values']['city'];
+  $str = '';
+  foreach($hobbies as $value){
+    if($value)
+      $str=$str." ".$value;
+  }
+  $fe_id = db_insert('custom_form')
+  ->fields(array(
+    'first_name' => $first_name,
+    'last_name' => $last_name,
+    'gender' => $gender,
+    'branch' => $branch,
+    'hobbies' => $str,
+    'image_path'=>$uri,
+    'city' => $city,
+  ))
+  ->execute();
+
+  //db_query("INSERT INTO {form_example} (first_name, last_name, gender, branch, hobbies) VALUES('%s', '%s', '%s', '%s', '%s')", $first_name, $last_name, $gender, $branch, $hobbies);
+
+  $message = "Your name is ".$first_name." ".$last_name." your gender is ".$gender." you have studied in ".$branch;
+  drupal_set_message($message);
+}
+
+
+function form_example_submissions(){
+  $header=array(t("ID"),t("First Name"),t('Last Name'),t('Profile Image'));
+  $results= db_query("SELECT * from {custom_form}");    
+  $rows=array();
+  while ($row = $results->fetchAssoc()) {
+    $img = theme('image', array('path' => $row['image_path'], 'width' => '50px','height' => '50px'));
+    $rows[] = array($row['fe_id'],$row['first_name'],$row['last_name'],$img);
+  }
+  return theme('table',array('header'=>$header,'rows'=>$rows));
+}
+
+function _cities_autocomplete($string) {
+    $matches = array();
+    $result = db_select('custom_form', 'c')
+      ->fields('c', array('city'))
+      ->condition('city', '%' . db_like($string) . '%', 'LIKE')
+      ->execute();
+  
+    // save the query to matches
+    foreach ($result as $row) {
+      $matches[$row->city] = check_plain($row->city);
+    }
+  
+    // Return the result to the form in json
+    drupal_json_output($matches);
+  }

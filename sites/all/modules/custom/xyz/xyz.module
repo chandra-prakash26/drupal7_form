@@ -1,0 +1,11 @@
+<?php
+function xyz_form($form, &$form_state) {
+  
+  $form['submit_button'] = array(
+    '#type' => 'submit',
+    '#value' => t('Click Here!'),
+  );
+  
+  return $form;
+}
+?>
